@@ -1,23 +1,10 @@
 {
-    "PRE_PROCESSING": 
-                    {"missing_vlaues":"df.dropna()", 
-                    "outliers": "",
-                    "noise":"",
-                    "transformation":"",
-                    "normalisierung":"",
-                    "standartisierung":"",
-                    "feature_selection":""
-                    },
-
-    "ALGO_SELECTION": 
-                    {"key_x":"function_x", 
-                    "key_y": ""
-                    },
-
-    "HYPER_PARAMETER":
-                    {"key_x":"function_x", 
-                    "key_y": ""
-                    }           
+"SPLIT_SIZE" : 0.25,
+"OUTLIER99" : true,
+"OUTLIER_ZSCORE" : {"STD": [3, 10]},
+"OUTLIER_KNN" : {"K": [3, 5], "X": [200, 1000]},
+"OUTLIER_DBSCAN" : {"K": [3, 5], "X": [200, 1000], "EPS": [0.42], "MIN_SAMPLES": [5]},
+"OUTLIER_NOISE" : {"CV": [3, 5]}       
 }
         
 

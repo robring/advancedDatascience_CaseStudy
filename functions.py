@@ -36,7 +36,6 @@ class Model():
         self.comb = comb
     def get_comb(self):
         return self.comb
-
     def train(self):
         X_train, y_train = self.get_data()[0], self.get_data()[2]
         return self.get_model().fit(X_train, y_train)
@@ -46,7 +45,9 @@ class Model():
         X_test, y_test, y_pred = self.get_data()[1], self.get_data()[3], self.pred()
         mae = mean_absolute_error(y_test, y_pred)
         score = self.get_model().score(X_test, y_test)
-        return np.round(mae, 2), np.round(score, 4)
+        return np.round(mae, 2), np.round(score, 6)
+    def __repr__(self):
+        return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)}')
 
 maeList = []
 
@@ -87,7 +88,7 @@ def reg_train_test(X_train, X_test, y_train, y_test):
     print(np.round(mae))
     return model
 
-def splitData(df, test_size = 0.2, outlier_index_list = []):
+def splitData(df, test_size = 0.2, outlier_index_list = [], method = None, replace_index_list=[]):
     '''function for splitting the data from a given df into the given test_size proportions'''
     listLenOriginal = len(outlier_index_list) #just for for output
     # Select price as label and remove price_data from list
@@ -100,7 +101,7 @@ def splitData(df, test_size = 0.2, outlier_index_list = []):
     #split Data and train the model
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state=1)
 
-    if not outlier_index_list == []:
+    if method != None:
         #create columnList to transform X_Train
         column_list = df.columns.to_list().remove('price')
 
@@ -115,15 +116,29 @@ def splitData(df, test_size = 0.2, outlier_index_list = []):
             #rint(type(o))
             if o >= maxIndex:
                 outlier_index_list.remove(o) 
-                    
-        #drop the outlierts from the dfs 
+        
+        # if method == "drop":
+        #     #drop the outlierts from the dfs 
+        #     df_X_Train = df_X_Train.drop(df_X_Train.index[outlier_index_list])
+        #     df_y_Train = df_y_Train.drop(df_y_Train.index[outlier_index_list])
+        #     print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
+        # elif method == "replace":
+        #     mean = np.round(df["price"].mean())
+        #     df_y_Train.loc[outlier_index_list,'price'] = mean
+        #     print(f'replaced {red(len(outlier_index_list))} / {listLenOriginal} rows')
+
+        # else:
+        outlier_index_list = list(set(outlier_index_list) - set(replace_index_list))
+        mean = np.round(df["price"].mean())
+        df_y_Train.loc[outlier_index_list,'price'] = mean
         df_X_Train = df_X_Train.drop(df_X_Train.index[outlier_index_list])
         df_y_Train = df_y_Train.drop(df_y_Train.index[outlier_index_list])
-
+        print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
+        print(f'replaced {red(len(replace_index_list))} / {listLenOriginal} rows')
+            
         #transfrom back trainigdata to np_arrays
         X_train = df_to_np(df_X_Train)
         y_train = df_to_np(df_y_Train)
-        print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
     
     return X_train, X_test, y_train, y_test
 
@@ -300,11 +315,11 @@ def getCombinations(iterable):
     s = list(iterable)  # allows duplicate elements
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-def get_unique_list(outlier_lists_all, combination):
+def get_unique_list(outlier_dict_all, combination):
     lists_rel = []
-    print(combination)
+    #print(combination)
     for c in combination:
-        lists_rel.append(outlier_lists_all[c])
+        lists_rel.append(outlier_dict_all[c])
 
     list_unique = lists_rel[0]
     if len(lists_rel) >= 2:
@@ -312,5 +327,9 @@ def get_unique_list(outlier_lists_all, combination):
             if not i == 0:
                 uniques = list(set().union(list_unique, l))
                 list_unique = uniques
-                #print(list_unique)
     return list_unique   
+
+def getBestModel(model_obj_list, df_summary, i):
+    for m in model_obj_list:
+        if m.get_comb() == df_summary["combo"][i]:
+            return m
