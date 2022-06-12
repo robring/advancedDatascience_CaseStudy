@@ -89,7 +89,7 @@ def reg_train_test(X_train, X_test, y_train, y_test):
 
 def splitData(df, test_size = 0.2, outlier_index_list = []):
     '''function for splitting the data from a given df into the given test_size proportions'''
-    
+    listLenOriginal = len(outlier_index_list) #just for for output
     # Select price as label and remove price_data from list
     X, y = df.drop(columns=["price"]), df["price"]
     # Transform Column to a numeric value
@@ -123,7 +123,7 @@ def splitData(df, test_size = 0.2, outlier_index_list = []):
         #transfrom back trainigdata to np_arrays
         X_train = df_to_np(df_X_Train)
         y_train = df_to_np(df_y_Train)
-        print(f'dropped {red(len(outlier_index_list))} rows')
+        print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
     
     return X_train, X_test, y_train, y_test
 
@@ -291,7 +291,10 @@ def getRelFeatures(df):
     return rel_features
 
 def drop_features(df, feature_list):
-    return df[feature_list]
+    try:
+        return df[feature_list]
+    except:
+        print(f'Error while trying to drop features')
 
 def getCombinations(iterable):
     s = list(iterable)  # allows duplicate elements
