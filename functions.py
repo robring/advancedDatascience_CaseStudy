@@ -19,10 +19,11 @@ from sklearn.metrics import mean_absolute_error
 from itertools import chain, combinations
 
 class Model():
-    def __init__(self, model, data, comb):
+    def __init__(self, model, data, comb, df):
         self.model = model
         self.data = data
         self.comb = comb
+        self.df = df
 
     def set_model(self, model):
         self.model = model
@@ -36,6 +37,10 @@ class Model():
         self.comb = comb
     def get_comb(self):
         return self.comb
+    def set_df(self, df):
+        self.df = df
+    def get_df(self):
+        return self.df
     def train(self):
         X_train, y_train = self.get_data()[0], self.get_data()[2]
         return self.get_model().fit(X_train, y_train)
@@ -47,7 +52,8 @@ class Model():
         score = self.get_model().score(X_test, y_test)
         return np.round(mae, 2), np.round(score, 6)
     def __repr__(self):
-        return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)}')
+        return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)} {bold("Features:")} {blue(len(self.df.columns)-1)}') #-1 bei columns wegen preis
+
 
 maeList = []
 
@@ -159,8 +165,8 @@ def get99(df):
 def mean99(df):
     pass
 
-# def drop99_all(df, outlier_index_list):
-#     return df.drop(df.index[outlier_index_list])
+def drop99_all(df, outlier_index_list):
+    return df.drop(df.index[outlier_index_list])
 
 def z_score(df, std_multiply=3):
     '''Univariate outlier detection based on descriptive statistics (three standard deviations)
@@ -249,7 +255,7 @@ def summary(maeList):
             print(green(f'model: {i}: {model}'))
 
 #Split DataSet into data and target
-def getNoise(df, cv=5):
+def getNoise(df, cv=5): #TODO zscore variable gestalten 
 
     df_noise = df.drop(['date'], axis = 1)
     x = df_noise.iloc[:,2:]
@@ -290,19 +296,15 @@ def getNoise(df, cv=5):
     noise_index_list = noise_index_list.to_list()
     return noise_index_list
 
-def getRelFeatures(df):
+def getRelFeatures(df, threshold=0.3):
     corr =df.corr(method="spearman")
     rel_features =[]
     corr_fig = corr["price"]
     ix = corr.sort_values('price', ascending=False).index
-    #print(bold("Relevante Korrelationen:"))
     for i in ix:
-        if corr_fig[i]>= 0.3 or corr_fig[i]<=-0.3:
+        #print(i)
+        if corr_fig[i]>= threshold or corr_fig[i]<=-threshold:
             rel_features.append(i)
-        #     print("Corr", bold(i),"zum Label:", green(round(corr_fig[i],3)))
-        # else:
-        #     print("Corr", bold(i),"zum Label:", red(round(corr_fig[i],3)))
-            
     return rel_features
 
 def drop_features(df, feature_list):
