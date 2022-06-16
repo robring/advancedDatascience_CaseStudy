@@ -1,12 +1,13 @@
 {
 "SPLIT_SIZE" : 0.25,
 "OUTLIER99" : true,
-"OUTLIER_ZSCORE" : {"STD": [3, 10]},
-"OUTLIER_KNN" : {"K": [3, 5], "X": [200, 1000]},
-"OUTLIER_DBSCAN" : {"K": [3, 5], "X": [200, 1000], "EPS": [0.42], "MIN_SAMPLES": [5]},
-"OUTLIER_NOISE" : {"CV": [5, 10]},
+"OUTLIER_ZSCORE" : {"STD": [10.1]},
+"OUTLIER_ZSCORE_IND" : true,
+"OUTLIER_KNN" : {"K": [3], "X": [200]},
+"OUTLIER_DBSCAN" : {"K": [3], "X": [200], "EPS": [0.42], "MIN_SAMPLES": [5]},
+"OUTLIER_NOISE" : {"CV": [5]},
 
-"FEATURE_SEL_CORR" : {"THRESHOLD": [0.3, 0.35, 0.4]}
+"FEATURE_SEL_CORR" : {"THRESHOLD": [0.3]}
 }
         
 

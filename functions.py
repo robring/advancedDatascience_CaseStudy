@@ -19,11 +19,12 @@ from sklearn.metrics import mean_absolute_error
 from itertools import chain, combinations
 
 class Model():
-    def __init__(self, model, data, comb, df):
+    def __init__(self, model, data, comb, df, features):
         self.model = model
         self.data = data
         self.comb = comb
         self.df = df
+        self.features = features
 
     def set_model(self, model):
         self.model = model
@@ -41,6 +42,10 @@ class Model():
         self.df = df
     def get_df(self):
         return self.df
+    def set_features(self, features):
+        self.features = features
+    def get_features(self):
+        return self.features
     def train(self):
         X_train, y_train = self.get_data()[0], self.get_data()[2]
         return self.get_model().fit(X_train, y_train)
@@ -51,9 +56,18 @@ class Model():
         mae = mean_absolute_error(y_test, y_pred)
         score = self.get_model().score(X_test, y_test)
         return np.round(mae, 2), np.round(score, 6)
+    def getDF(self):
+        X_train, X_test, y_train, y_test = self.data
+        X = np.append(X_train, X_test, axis=0)
+        y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
+        X_y = np.append(X, y, axis=1)
+        features = df.columns.to_list()
+        features.remove("price")
+        df = pd.DataFrame(X_y, columns=features)
+        return df
+
     def __repr__(self):
         return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)} {bold("Features:")} {blue(len(self.df.columns)-1)}') #-1 bei columns wegen preis
-
 
 maeList = []
 
@@ -71,30 +85,30 @@ def dropMissingValues(df):
     df = df.reset_index(drop=True)
     return df
 
-def reg_train_test(X_train, X_test, y_train, y_test):
-    '''Function for building Basic Regression Model'''
-    # fit the model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+# def reg_train_test(X_train, X_test, y_train, y_test):
+#     '''Function for building Basic Regression Model'''
+#     # fit the model
+#     model = LinearRegression()
+#     model.fit(X_train, y_train)
 
-    # evaluate the model
-    ypred = model.predict(X_test)
+#     # evaluate the model
+#     ypred = model.predict(X_test)
     
-    # evaluate predictions
-    mae = mean_absolute_error(y_test, ypred)
-    maeList.append(np.round(mae))
-    #print(f'{bold("Mean Absolute Error")}: {blue(np.round(mae))}\n')
+#     # evaluate predictions
+#     mae = mean_absolute_error(y_test, ypred)
+#     maeList.append(np.round(mae))
+#     #print(f'{bold("Mean Absolute Error")}: {blue(np.round(mae))}\n')
 
-    # #print(bold(f'MAE_List expanded:'))
-    # for i, m in enumerate(maeList):
-    #     if i+1 == len(maeList):
-    #         print(f'model_{bold(i)} - "Mean Absolute Error:" {blue(m)}') 
-    #     else:
-    #         print(f'model_{bold(i)} - "Mean Absolute Error:" {m}')
-    print(np.round(mae))
-    return model
+#     # #print(bold(f'MAE_List expanded:'))
+#     # for i, m in enumerate(maeList):
+#     #     if i+1 == len(maeList):
+#     #         print(f'model_{bold(i)} - "Mean Absolute Error:" {blue(m)}') 
+#     #     else:
+#     #         print(f'model_{bold(i)} - "Mean Absolute Error:" {m}')
+#     print(np.round(mae))
+#     return model
 
-def splitData(df, test_size = 0.2, outlier_index_list = [], method = None, replace_index_list=[]):
+def splitData(df, test_size = 0.25, outlier_index_list = [], method = None, replace_index_list=[]):
     '''function for splitting the data from a given df into the given test_size proportions'''
     listLenOriginal = len(outlier_index_list) #just for for output
     # Select price as label and remove price_data from list
@@ -140,7 +154,7 @@ def splitData(df, test_size = 0.2, outlier_index_list = [], method = None, repla
         df_X_Train = df_X_Train.drop(df_X_Train.index[outlier_index_list])
         df_y_Train = df_y_Train.drop(df_y_Train.index[outlier_index_list])
         print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
-        print(f'replaced {red(len(replace_index_list))} / {listLenOriginal} rows')
+        #print(f'replaced {red(len(replace_index_list))} / {listLenOriginal} rows')
             
         #transfrom back trainigdata to np_arrays
         X_train = df_to_np(df_X_Train)
@@ -162,8 +176,6 @@ def get99(df):
     list99_combined =  list(set(list99) | set(list90))
     return list99_combined
 
-def mean99(df):
-    pass
 
 def drop99_all(df, outlier_index_list):
     return df.drop(df.index[outlier_index_list])
@@ -206,9 +218,32 @@ def z_score(df, std_multiply=3):
     
     return outlier_list_unique
 
-def outliers_knn(df, k=3, num_outliers=181):
+def z_score_individual(df):
+       if "id" in df.columns:
+              df = df.drop(columns=["id"])
+
+       limit = {'date':3, 'price':10, 'bedrooms':7, 'bathrooms':8, 'sqft_living':8, 'sqft_lot':17,
+              'floors':5, 'waterfront':100, 'dis_super':100, 'view':100, 'condition':100, 'grade':100,
+              'sqft_above':6, 'sqft_basement':6, 'yr_built':3, 'yr_renovated':100, 'zipcode':3,
+              'lat':3, 'long':5, 'sqft_living15':5, 'sqft_lot15':16, 'ahf1':3, 'ahf2':4, 'ahf3':3}
+       x=0
+       outlier_indice = []
+       z_score_mask = df.assign(outlier = False).outlier
+       for i in df.columns:
+              local_mask = df.assign(outlier = np.logical_or(df[i] > df[i].mean() + df[i].std() * limit[i], df[i] < df[i].mean() - df[i].std() * limit[i])).outlier
+              z_score_mask = np.logical_or(z_score_mask, local_mask)
+              for e in z_score_mask[z_score_mask == True].index:
+                     if e not in outlier_indice:
+                            outlier_indice.append(e)
+
+              #print(f"{i}: {local_mask.sum()}", end = " ")
+              x+=1
+       #print(f"\n\nEs wurden {blue(str(len(outlier_indice)))} Ausreißer gefunden. Sie sind auf den Graphen gelb dargestellt.")
+       return outlier_indice
+
+def outliers_knn(df, k=3, num_outliers=181, split_size=0.25):
     #X_train needed
-    X_train, X_test, y_train, y_test = splitData(df, 0.2)
+    X_train, X_test, y_train, y_test = splitData(df, split_size)
 
     #normalize data to identify outliers
     scaler = preprocessing.MinMaxScaler()
@@ -221,10 +256,10 @@ def outliers_knn(df, k=3, num_outliers=181):
  
     return outlier_indices
 
-def outliers_dbscan(df, k=3, num_outliers=181, eps=0.42, min_samples=5):
+def outliers_dbscan(df, k=3, num_outliers=181, eps=0.42, min_samples=5, split_size=0.25):
 
     #need distances
-    X_train, X_test, y_train, y_test = splitData(df, 0.2)
+    X_train, X_test, y_train, y_test = splitData(df, split_size)
     scaler = preprocessing.MinMaxScaler()
     X = scaler.fit_transform(X_train)
     nbrs = NearestNeighbors(n_neighbors=k+1, algorithm='ball_tree').fit(X)
@@ -333,5 +368,16 @@ def get_unique_list(outlier_dict_all, combination):
 
 def getBestModel(model_obj_list, df_summary, i):
     for m in model_obj_list:
-        if m.get_comb() == df_summary["combo"][i]:
+        mae, score = m.summary()
+        if mae == df_summary["mae"][i]:
+        #if m.get_comb() == df_summary["combo"][i]:
             return m
+        
+def train_test_to_df(X_train, X_test, y_train, y_test, columns):
+    X = np.append(X_train, X_test, axis=0)
+    y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
+    #y = np.append(y_train, y_test, axis=0)
+    X_y = np.append(X, y, axis=1)
+    #features = df.columns.to_list()
+    df = pd.DataFrame(X_y, columns=columns)
+    return df
