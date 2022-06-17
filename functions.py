@@ -15,8 +15,9 @@ from sklearn.linear_model import BayesianRidge
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import VotingRegressor
 from sklearn.model_selection import cross_val_predict
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error
 from itertools import chain, combinations
+import pickle
 
 class Model():
     def __init__(self, model, data, comb, df, features):
@@ -54,18 +55,8 @@ class Model():
     def summary(self):
         X_test, y_test, y_pred = self.get_data()[1], self.get_data()[3], self.pred()
         mae = mean_absolute_error(y_test, y_pred)
-        mse = mean_squared_error(y_test, y_pred)
         score = self.get_model().score(X_test, y_test)
         return np.round(mae, 2), np.round(score, 6), 
-    def getDF(self):
-        X_train, X_test, y_train, y_test = self.data
-        X = np.append(X_train, X_test, axis=0)
-        y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
-        X_y = np.append(X, y, axis=1)
-        features = df.columns.to_list()
-        features.remove("price")
-        df = pd.DataFrame(X_y, columns=features)
-        return df
 
     def __repr__(self):
         return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)} {bold("Features:")} {blue(len(self.features))}') #-1 bei columns wegen preis
@@ -85,29 +76,6 @@ def dropMissingValues(df):
     df = df.dropna()
     df = df.reset_index(drop=True)
     return df
-
-# def reg_train_test(X_train, X_test, y_train, y_test):
-#     '''Function for building Basic Regression Model'''
-#     # fit the model
-#     model = LinearRegression()
-#     model.fit(X_train, y_train)
-
-#     # evaluate the model
-#     ypred = model.predict(X_test)
-    
-#     # evaluate predictions
-#     mae = mean_absolute_error(y_test, ypred)
-#     maeList.append(np.round(mae))
-#     #print(f'{bold("Mean Absolute Error")}: {blue(np.round(mae))}\n')
-
-#     # #print(bold(f'MAE_List expanded:'))
-#     # for i, m in enumerate(maeList):
-#     #     if i+1 == len(maeList):
-#     #         print(f'model_{bold(i)} - "Mean Absolute Error:" {blue(m)}') 
-#     #     else:
-#     #         print(f'model_{bold(i)} - "Mean Absolute Error:" {m}')
-#     print(np.round(mae))
-#     return model
 
 def splitData(df, test_size = 0.25, outlier_index_list = [], method = None, replace_index_list=[]):
     '''function for splitting the data from a given df into the given test_size proportions'''
@@ -281,18 +249,18 @@ def outliers_dbscan(df, k=3, num_outliers=181, eps=0.42, min_samples=5, split_si
 
     return outliers_list
 
-def summary(maeList):
-    baseline = maeList[0]
-    for i, model in enumerate(maeList):
-        if model > baseline:
-            print(red(f'model: {i}: {model}'))
-        elif model == baseline:
-            print(f'model: {i}: {model}')
-        else:
-            print(green(f'model: {i}: {model}'))
+# def summary(maeList):
+#     baseline = maeList[0]
+#     for i, model in enumerate(maeList):
+#         if model > baseline:
+#             print(red(f'model: {i}: {model}'))
+#         elif model == baseline:
+#             print(f'model: {i}: {model}')
+#         else:
+#             print(green(f'model: {i}: {model}'))
 
 #Split DataSet into data and target
-def getNoise(df, cv=5): #TODO zscore variable gestalten 
+def getNoise(df, cv=5, max_depth=5, multi=10): #TODO zscore variable gestalten 
 
     df_noise = df.drop(['date'], axis = 1)
     x = df_noise.iloc[:,2:]
@@ -300,7 +268,7 @@ def getNoise(df, cv=5): #TODO zscore variable gestalten
 
     reg1 = GradientBoostingRegressor(random_state=1)
     reg2 = BayesianRidge()
-    reg3 = DecisionTreeRegressor(max_depth=5, random_state=1)
+    reg3 = DecisionTreeRegressor(max_depth=max_depth, random_state=1)
 
     reg1.fit(x,y)
     reg2.fit(x,y)
@@ -311,21 +279,12 @@ def getNoise(df, cv=5): #TODO zscore variable gestalten
     ereg.fit(x, y)
 
     y_pred=cross_val_predict(ereg,x,y, cv=cv)
-
-    xt = x[:20]
-    #real = y[:20]
-    pred1 = reg1.predict(xt)
-    pred2 = reg2.predict(xt)
-    pred3 = reg3.predict(xt)
-    pred4 = ereg.predict(xt)
-    y_pred20 = y_pred[:20]
-
     mae=mean_absolute_error(y_pred,y)
     noise_id=[]
     for i, e in enumerate(y):
-        if y_pred[i] > e+mae*10:
+        if y_pred[i] > e+mae*multi:
             noise_id.append(i)
-        elif y_pred[i] < e-mae*10:
+        elif y_pred[i] < e-mae*multi:
             noise_id.append(i)    
 
     #print(f"Bei dem 10fachen MAE kann man bis zu {red(len(noise_id))} Noise Sätze finden")
@@ -386,7 +345,8 @@ def getBestModel(model_obj_list, df_summary, i):
 
 def train_test_to_df(X_train, X_test, y_train, y_test, columns):
     X = np.append(X_train, X_test, axis=0)
-    columns.remove("price")
+    if "price" in columns:
+        columns.remove("price")
     columns.append("price")
     #print(X_train.shape)
     #print("X", X.shape)
@@ -403,3 +363,16 @@ def train_test_to_df(X_train, X_test, y_train, y_test, columns):
     #features = df.columns.to_list()
     df = pd.DataFrame(X_y, columns=columns)
     return df
+
+def saveModel(model_obj):
+    an_obj = model_obj
+    file = open("data/pickle/model", "wb")
+    pickle.dump(an_obj, file)
+    file.close()
+
+def loadModel():
+    file_to_read = open("data/pickle/model", "rb")
+    loaded_object = pickle.load(file_to_read)
+    file_to_read.close()
+    print(loaded_object)
+    return loaded_object
