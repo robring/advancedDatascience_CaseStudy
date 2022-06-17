@@ -15,7 +15,7 @@ from sklearn.linear_model import BayesianRidge
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import VotingRegressor
 from sklearn.model_selection import cross_val_predict
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 from itertools import chain, combinations
 
 class Model():
@@ -54,8 +54,9 @@ class Model():
     def summary(self):
         X_test, y_test, y_pred = self.get_data()[1], self.get_data()[3], self.pred()
         mae = mean_absolute_error(y_test, y_pred)
+        mse = mean_squared_error(y_test, y_pred)
         score = self.get_model().score(X_test, y_test)
-        return np.round(mae, 2), np.round(score, 6)
+        return np.round(mae, 2), np.round(score, 6), 
     def getDF(self):
         X_train, X_test, y_train, y_test = self.data
         X = np.append(X_train, X_test, axis=0)
@@ -67,7 +68,7 @@ class Model():
         return df
 
     def __repr__(self):
-        return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)} {bold("Features:")} {blue(len(self.df.columns)-1)}') #-1 bei columns wegen preis
+        return (f'{bold("Model:")} {blue(self.model)} {bold("Combination:")} {blue(self.comb)} {bold("Features:")} {blue(len(self.features))}') #-1 bei columns wegen preis
 
 maeList = []
 
@@ -148,11 +149,12 @@ def splitData(df, test_size = 0.25, outlier_index_list = [], method = None, repl
         #     print(f'replaced {red(len(outlier_index_list))} / {listLenOriginal} rows')
 
         # else:
-        outlier_index_list = list(set(outlier_index_list) - set(replace_index_list))
-        mean = np.round(df["price"].mean())
-        df_y_Train.loc[outlier_index_list,'price'] = mean
+        #outlier_index_list = list(set(outlier_index_list) - set(replace_index_list))
+        #mean = np.round(df["price"].mean())
+        #df_y_Train.loc[outlier_index_list,'price'] = mean
         df_X_Train = df_X_Train.drop(df_X_Train.index[outlier_index_list])
         df_y_Train = df_y_Train.drop(df_y_Train.index[outlier_index_list])
+
         print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
         #print(f'replaced {red(len(replace_index_list))} / {listLenOriginal} rows')
             
@@ -373,11 +375,31 @@ def getBestModel(model_obj_list, df_summary, i):
         #if m.get_comb() == df_summary["combo"][i]:
             return m
         
+# def train_test_to_df(X_train, X_test, y_train, y_test, columns):
+#     X = np.append(X_train, X_test, axis=0)
+#     y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
+#     #y = np.append(y_train, y_test, axis=0)
+#     X_y = np.append(X, y, axis=1)
+#     #features = df.columns.to_list()
+#     df = pd.DataFrame(X_y, columns=columns)
+#     return 
+
 def train_test_to_df(X_train, X_test, y_train, y_test, columns):
     X = np.append(X_train, X_test, axis=0)
-    y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
-    #y = np.append(y_train, y_test, axis=0)
+    columns.remove("price")
+    columns.append("price")
+    #print(X_train.shape)
+    #print("X", X.shape)
+    try:
+        y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
+
+    except:
+        y = np.append(y_train, y_test, axis=0)
+        y = y.reshape(len(y), 1)
+    
+    #print("y", y.shape)
     X_y = np.append(X, y, axis=1)
+    #print("X_y", X_y.shape)
     #features = df.columns.to_list()
     df = pd.DataFrame(X_y, columns=columns)
     return df
