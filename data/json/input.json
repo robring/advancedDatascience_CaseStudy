@@ -7,7 +7,11 @@
                 "OUTLIER_DBSCAN" : {"K": [4], "X": [500], "EPS": [0.6, 0.4], "MIN_SAMPLES": [8]},
                 "OUTLIER_NOISE" : {"CV": [5], "DEPTH": [5], "MULTI": [10]},
 
-                "FEATURE_SEL_CORR" : {"THRESHOLD": [0.2, 0.25]}
+                "FEATURE_SEL_CORR" : {"THRESHOLD": [0.2, 0.25]},
+                "FEATURE_SEL_MANUAL" : true,
+
+                "REG_LINEAR" : true,
+                "REG_LASSO" : {"ALPHA": [1,2,5]}
                 },
 
 
