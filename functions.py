@@ -47,6 +47,7 @@ class Model():
         self.features = features
     def get_features(self):
         return self.features
+        
     def train(self):
         X_train, y_train = self.get_data()[0], self.get_data()[2]
         return self.get_model().fit(X_train, y_train)
@@ -123,7 +124,7 @@ def splitData(df, test_size = 0.25, outlier_index_list = [], method = None, repl
         df_X_Train = df_X_Train.drop(df_X_Train.index[outlier_index_list])
         df_y_Train = df_y_Train.drop(df_y_Train.index[outlier_index_list])
 
-        print(f'dropped {red(len(outlier_index_list))} / {listLenOriginal} rows')
+        print(f'dropped {red(len(outlier_index_list))} rows')
         #print(f'replaced {red(len(replace_index_list))} / {listLenOriginal} rows')
             
         #transfrom back trainigdata to np_arrays
@@ -206,13 +207,12 @@ def z_score_individual(df):
                      if e not in outlier_indice:
                             outlier_indice.append(e)
 
-              #print(f"{i}: {local_mask.sum()}", end = " ")
               x+=1
        #print(f"\n\nEs wurden {blue(str(len(outlier_indice)))} Ausreißer gefunden. Sie sind auf den Graphen gelb dargestellt.")
        return outlier_indice
 
 def outliers_knn(df, k=3, num_outliers=181, split_size=0.25):
-    #X_train needed
+
     X_train, X_test, y_train, y_test = splitData(df, split_size)
 
     #normalize data to identify outliers
@@ -249,17 +249,6 @@ def outliers_dbscan(df, k=3, num_outliers=181, eps=0.42, min_samples=5, split_si
 
     return outliers_list
 
-# def summary(maeList):
-#     baseline = maeList[0]
-#     for i, model in enumerate(maeList):
-#         if model > baseline:
-#             print(red(f'model: {i}: {model}'))
-#         elif model == baseline:
-#             print(f'model: {i}: {model}')
-#         else:
-#             print(green(f'model: {i}: {model}'))
-
-#Split DataSet into data and target
 def getNoise(df, cv=5, max_depth=5, multi=10): #TODO zscore variable gestalten 
 
     df_noise = df.drop(['date'], axis = 1)
@@ -334,14 +323,6 @@ def getBestModel(model_obj_list, df_summary, i):
         #if m.get_comb() == df_summary["combo"][i]:
             return m
         
-# def train_test_to_df(X_train, X_test, y_train, y_test, columns):
-#     X = np.append(X_train, X_test, axis=0)
-#     y = np.append(y_train, y_test.reshape(len(y_test), 1), axis=0)
-#     #y = np.append(y_train, y_test, axis=0)
-#     X_y = np.append(X, y, axis=1)
-#     #features = df.columns.to_list()
-#     df = pd.DataFrame(X_y, columns=columns)
-#     return 
 
 def train_test_to_df(X_train, X_test, y_train, y_test, columns):
     X = np.append(X_train, X_test, axis=0)
