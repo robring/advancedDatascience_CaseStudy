@@ -15,20 +15,5 @@
                 "REG_RIDGE" : true,
                 "REG_TREE" : true,
                 "REG_LASSO" : {"ALPHA": [2000]}
-                },
-
-
-"TESTING":      {
-                "SPLIT_SIZE" : 0.25,
-                "OUTLIER99" : true,
-                "OUTLIER_ZSCORE" : {"STD": [10.1]},
-                "OUTLIER_ZSCORE_IND" : false,
-                "OUTLIER_KNN" : {"K": [], "X": []},
-                "OUTLIER_DBSCAN" : {"K": [4], "X": [500], "EPS": [0.4], "MIN_SAMPLES": [8]},
-                "OUTLIER_NOISE" : {"CV": [5], "DEPTH": [5], "MULTI": [10]},
-
-                "FEATURE_SEL_CORR" : {"THRESHOLD": []}
                 }
-                
-
 }
