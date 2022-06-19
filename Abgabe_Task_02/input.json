@@ -1,0 +1,18 @@
+{
+"SPLIT_SIZE" : 0.25,
+"OUTLIER99" : true,
+"OUTLIER_ZSCORE" : {"STD": [10.1]},
+"OUTLIER_ZSCORE_IND" : true,
+"OUTLIER_KNN" : {"K": [3], "X": [1500]},
+"OUTLIER_DBSCAN" : {"K": [3], "X": [1500], "EPS": [0.4], "MIN_SAMPLES": [8]},
+"OUTLIER_NOISE" : {"CV": [5], "DEPTH": [5], "MULTI": [10]},
+
+"FEATURE_SEL_CORR" : {"THRESHOLD": [0.25, 0.3]},
+"FEATURE_SEL_MANUAL" : true,
+
+"REG_LINEAR" : true,
+"REG_GRADIANT" : true,
+"REG_RIDGE" : true,
+"REG_TREE" : true,
+"REG_LASSO" : {"ALPHA": [2000]}
+}
